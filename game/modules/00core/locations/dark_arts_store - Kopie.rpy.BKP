@@ -1,0 +1,959 @@
+## Author
+# Questions/Comments/Suggestions/Bugfixes can be directed to: a4hryou
+
+# Package Register
+register dark_arts_store_pregame 1 in core as "Dark Arts Store"
+
+# Pregame
+label dark_arts_store_pregame:
+  python:
+  ## Constants
+    ## Character Definition
+    das_proprietor = Person(Character("Mysterious Woman", who_color="#960096", what_color="#960096"), "das_proprietor", cut_portrait = True, prefix = "", suffix = "")
+
+    ## Actions
+    das_proprietor.action_ask_suggestion_pills = das_proprietor.add_action("Ask about more Suggestion Pills", label = "_ask_suggestion_pills", condition = "current_location == dark_arts_store and not dark_arts_store.has_item(suggestion_pills)")
+    das_proprietor.action_ask_transformation_potion = das_proprietor.add_action("Ask about another Transformation Potion", label = "_ask_transformation_potion", condition = "current_location == dark_arts_store and not dark_arts_store.has_item(transformation_potion)")
+    das_proprietor.action_ask_will_tamer = das_proprietor.add_action("Ask about another Will-Tamer", label = "_ask_will_tamer", condition = "current_location == dark_arts_store and not dark_arts_store.has_item(will_tamer)")
+
+    ## Tags
+    # Common Character Tags
+    das_proprietor.add_tags('no_hypnosis')  ## note: she probably likes boys and girls but for game purposes she doesn't like anybody
+
+    # Character Specific Tags
+    # N/A
+
+    ## Locations
+    # Dark Arts Store
+    dark_arts_store = Location("Dark Arts Store", "das", cut_portrait = True, enter_break_labels = ['das_no_access'], enter_labels = ['das_enter'], exit_labels = ['das_exit'], area = ['downtown', 'stores'], access_count = 0, encounters = 0, week = 0, unseen = False)
+    downtown.connection_das = downtown.add_connection(dark_arts_store)
+    dark_arts_store.connection_do = dark_arts_store.add_connection(downtown)
+
+    # more owner to store
+    das_proprietor.location = dark_arts_store
+    # dark_arts_store.bring_person_here(das_proprietor) ## this causes her to follow you around, so replaced by command above
+
+
+    ## Items
+    das_book = Item('Dusty Old Book', 'boo', with_examine = True)
+
+    old_hypnotic_focus = Item('Old Gold Watch', 'ohf', with_examine = True)
+    old_hypnotic_focus.action_ask_about = old_hypnotic_focus.add_action("Ask about the Old Gold Watch", label = "_ask_about", condition = "player.has_tag('ohf_examined') and not player.has_item(old_hypnotic_focus)")
+
+    shiny_ring = Item('Shiny Ring', 'shr', with_examine = True, with_give = True)
+    shiny_ring.action_ask_about = shiny_ring.add_action("Ask about the Shiny Ring", label = "_ask_about", condition = "player.has_tag('shr_examined') and not player.has_item(ring_sexuality)")
+    ring_sexuality = Item('Ring of Sexuality', 'rs', with_examine = True, with_give = True)
+    ring_sexuality.action_ask_about = ring_sexuality.add_action("Ask about the Ring of Sexuality", label = "_ask_about", condition = "player.has_tag('shr_examined') and not player.has_item(ring_sexuality)")
+    ring_sexuality.add_stats_with_value('price', value = 500)
+
+    stamina_pills = Item('Inscrutable Concoctions', 'sp', max_quantity = 6, with_examine = True)
+    # NOTE: purchase of stamina pills currently disabled pending figuring out how best to make them work under Renpy system
+    # stamina_pills.action_ask_about = stamina_pills.add_action("Ask about the Pills", label = "_ask_about", condition = "player.has_tag('sp_examined') and not player.has_item(stamina_pills)")
+
+    unexamined_pills = Item('Inscrutable Concoctions', 'icp', max_quantity = 4, with_examine = True)
+    unexamined_pills.action_ask_about = unexamined_pills.add_action("Ask about the pills", label = "_ask_about", condition = "player.has_tag('icp_examined') and not player.has_item(suggestion_pills)")
+    suggestion_pills = Item('Suggestion Pills', 'sup', max_quantity = 4, with_examine = True)
+    suggestion_pills.action_ask_about = suggestion_pills.add_action("Ask about the Suggestion Pills", label = "_ask_about", condition = "player.has_tag('icp_examined') and not player.has_item(suggestion_pills)")
+
+    transformation_potion = Item('Transformation Potion', 'tp', max_quantity = 100, with_examine = True, with_give = True)
+    transformation_potion.action_ask_about = transformation_potion.add_action("Ask about the Potion", label = "_ask_about", condition = "player.has_tag('tp_examined') and not player.has_item(transformation_potion)")
+
+    will_tamer = Item('Will-Tamer', 'wt', with_examine = True, with_use = True)
+    will_tamer.action_ask_about = will_tamer.add_action("Ask about the Collar", label = "_ask_about", condition = "player.has_tag('wt_examined') and not player.has_item(will_tamer)")
+    will_tamer.add_stats_with_value('price')
+
+    # NEED playtest to confirm transformation potion is available at appropriate time only (i.e. if not given as a gift) and that love potion is always available
+    # NEED playtest that ring is working properly
+    dark_arts_store.add_item(das_book, with_message = False)
+    das_tp = dark_arts_store.add_item(transformation_potion, with_message = False)
+    dark_arts_store.add_item(love_potion, with_message = False)
+    dark_arts_store.add_item(will_tamer, with_message = False)
+    dark_arts_store.add_item(old_hypnotic_focus, with_message = False)
+    dark_arts_store.add_item(shiny_ring, with_message = False)
+    # dark_arts_store.add_item(stamina_pills, with_message = False)
+    dark_arts_store.add_item(unexamined_pills, with_message = False)
+    das_sup = dark_arts_store.add_store_item(suggestion_pills, price = 100, available_quantity = 0, send_to = player, with_examine = True, single_buy_amount = 4, seen = True)
+
+    dark_arts_store.open_store("Dark Arts Store")
+
+    # Player/item interactions
+    player.add_stats_with_value('sp_use_count', 'sup_use_count')
+    # stamina_pills.add_action("Throw Them Away", label = '_throw_away', condition = "player.has_item(stamina_pills) and player.sp_use_count >= 2")
+    suggestion_pills.add_action("Take a pill", label = '_take_pill', condition = "player.has_item(suggestion_pills) and not player.has_tag('sup_in_use')")
+    suggestion_pills.add_action("Throw Them Away", label = '_throw_away', condition = "player.has_item(suggestion_pills)")
+
+
+    ## Other
+    das_proprietor.change_status("minor_character")
+
+    # Start Day Events
+    start_day_labels.append('das_proprietor_start_day')
+
+
+
+    ########### VARIABLES ###########
+    # Common Character Variables
+    # N/A
+
+    # Character Specific Variables
+    # N/A
+
+    # Player Examine Phrases
+    player.add_examine_phrase("player.has_tag('das_access')", "You have access to the Dark Arts Store.")
+  return
+
+########### CHARACTER ACTIONS ###########
+# Examine Character
+label das_proprietor_examine:
+    wt_image dap_store_1
+    "The store owner watches you carefully."
+    return
+
+# Ask Character about Suggestion Pills
+label das_proprietor_ask_suggestion_pills:
+  if player.has_item(suggestion_pills):
+    "You still have some. You had better finish those before thinking about buying more."
+  else:
+    das_proprietor.c "You've used all of the suggestion pills? You've been a busy influencer, haven't you?  You can buy more if you want, but they just keep getting more and more draining."
+    $ das_sup.available_quantity = 1
+  return
+
+# Ask Character about Transformation Potion
+label das_proprietor_ask_transformation_potion:
+  wt_image das_proprietor.image
+  if player.has_tag('dap_test_passed'): # note: test is not currently implemented
+    player.c "Lilliann, are you able to mix up another Transformation Potion?"
+    das_proprietor.c "Of course, sugar. Anything for you."
+    add 1 transformation_potion to player notify
+  else:
+    player.c "Do you have any more of those Transformation Potions?"
+    "She assesses you carefully for a moment."
+    das_proprietor.c "That's a very special item.  I know some in this town are not as careful as me, but I won't allow too many to get in the hands of just anyone."
+  return
+
+# Ask Character about Will-Tamer
+label das_proprietor_ask_will_tamer:
+  wt_image das_proprietor.image
+  if player.has_tag('dap_test_passed'):  # note: test is not currently implemented
+    player.c "Lilliann, do you have access to another Will-Tamer?"
+    das_proprietor.c "Of course, sugar. Anything for you."
+    add 1 will_tamer to player notify
+  else:
+    player.c "Do you have any more of those Will-Tamers?"
+    "She assesses you carefully."
+    das_proprietor.c "That's a very special item.  I can't allow too many to get in the hands of just anyone."
+  return
+
+########### OBJECTS ###########
+# Book
+label boo_examine:
+    "You pick up the book from the shelf.  It looks old, but someone has recently added a new chapter.  The title page reads \"Tales of the Drunken Cowboy\".  Sounds like a really bad western."
+    player.c "Does this have any power?"
+    das_proprietor.c "You'd be amazed at how much time it can make disappear."
+    "You put it back.  You've been making plenty of time go away as it is.  The woman behind the counter smiles."
+    das_proprietor.c "It will be waiting for you when you're finished with this reality."
+    "You're not sure whether you're unnerved or comforted by that thought."
+    # reset_menu
+    # rem 1 book from dark_arts_store no_message
+    wt_image current_location.image
+    return
+
+# Hypnotic Focus
+label ohf_examine:
+    if player.has_item(old_hypnotic_focus):
+        wt_image hypnotic_focus_store_1
+        "Your new - or rather, old - focus."
+        pass
+    elif current_location == dark_arts_store:
+        wt_image hypnotic_focus_store_1
+        "An old gold pocket watch catches your attention. It's hard to take your eyes off it."
+        add tags 'ohf_examined' to player
+    wt_image current_location.image
+    return
+
+label ohf_ask_about:
+    if dark_arts_store.is_here and das_proprietor.is_here:
+        wt_image hypnotic_focus_store_1
+        if player.has_tag('hypnotist'):
+            if player.has_tag('ohf_already_discussed'):
+                das_proprietor.c "Debating about the focus? It's a tough call, isn't it?  Forge your own path untainted by the past or learn from those who came before you?"
+            else:
+                add tags 'ohf_already_discussed' to player
+                das_proprietor.c "Pretty isn't it? It's a focus, much like the one you use, I expect.  This one was used by a powerful hypnotist for many, many, many years."
+                wt_image das_proprietor.image
+                das_proprietor.c "He has a new role now and doesn't need it, but the watch has absorbed some of his talent."
+                player.c "What do you mean he has a new role?"
+                das_proprietor.c "Tsk tsk.  Allow a girl her secrets.  Would you like to own it?  The experience his focus has absorbed could boost your own ability.  Not a lot, but a little, and sometimes a little makes a difference."
+                das_proprietor.c "It's a unique item, but I'm curious to find out what the watch may absorb fro you between now and the time you're ready to retire it. I've never seen a focus exposed to the careers of two talents."
+                das_proprietor.c "So only 300, a very special price just for you."
+            $ title = "Buy it? (costs 300)"
+            menu:
+                "Buy it" if player.money - player.min_money >= 300:
+                    wt_image das_proprietor.image
+                    das_proprietor.c "Excellent. I can't wait to find out what the focus learns from you."
+                    $ player.money -= 300
+                    $ player.hypnosis_level += 4
+                    give 1 old_hypnotic_focus from dark_arts_store to player notify
+                    rem tags 'ohf_examined' from player
+                    rem action
+                "Not right now":
+                    pass
+        else:
+            if player.has_tag('ohf_already_discussed'):
+                das_proprietor.c "It is captivating. Are you just drawn to its beauty, or are you ready to learn how to use it?"
+            else:
+                das_proprietor.c "Even sitting still like that, unmoving, you can't take your eyes off it."
+                "The store owner's voice is cooing in your ears.  She's right.  You try, but you can't drag your eyes away from the beautiful, shiny object in front of you."
+                das_proprietor.c "It's a focus.  This one was used by a very powerful hypnotist for many, many, many years.  He has a new role now and doesn't need it, but the watch has absorbed some of his talent."
+                das_proprietor.c "Go ahead, look away now.  It can't actually do anything to you without someone using it."
+                wt_image das_proprietor.image
+                "You blink your eyes and shake your head to clear it."
+                das_proprietor.c "I could show you how to use it, if you want.  I sense no natural talent in you, so you'd never be very good at influencing people through hypnosis, but the watch itself has enough power to let you perform the occasional parlor trick on your friends, if you'd enjoy that sort of thing."
+                das_proprietor.c "It's a unique item, but I'm beginning to become interested in you, and I'm curious to see what you'd do with this.  So for you, only 500 for the watch and the training."
+            $ title = "Buy it? (costs 500)"
+            menu:
+                "Buy it" if player.money - player.min_money >= 500:
+                    wt_image das_proprietor.image
+                    das_proprietor.c "Excellent. The focus will almost do the work for you.  You only need to get and hold your subject's attention while it works it's magic.  The easiest way to teach you is to show you."
+                    "She picks up the watch by its chain."
+                    wt_image hypnotizing_2
+                    das_proprietor.c "Look at the pretty watch for me.  Look at it and listen to me.  Listen to my voice.  Only my voice.  Only my words.  Nothing else."
+                    wt_image das_proprietor.image
+                    das_proprietor.c "How do you feel?"
+                    player.c "Uh, tired for some reason."
+                    das_proprietor.c "What do you remember?"
+                    player.c "You were telling me you'd show me how to use the focus."
+                    das_proprietor.c "I want you to remember what I said to you while you watched the swinging focus."
+                    player.c "I remember now.  You were chanting at me.  Telling me to listen to your voice."
+                    das_proprietor.c "Which put you in a trance.  What do you remember after that?"
+                    player.c "Nothing"
+                    das_proprietor.c "That's not very helpful in trying to teach you, is it?  I want you to remember my last words to you."
+                    "The memory comes back to you ..."
+                    das_proprietor.c "{i}You will forget everything we did here today from the time I hypnotized you to the time I release you from your trance.  You will come out of the trance on the count of 1 ... 3, 2, 1."
+                    player.c "What did you do to me while I was in the trance?"
+                    "Are your clothes disheveled?  You're not sure."
+                    das_proprietor.c "Nothing you didn't want to do.  Even the best hypnotist can only influence their subject to take a path they're otherwise open to.  You'll be even more limited than that.  But you may be able to get them to do something they're otherwise inclined to do in situations they wouldn't normally do it."
+                    player.c "Like what?  Getting a woman to take her top off in public?"
+                    das_proprietor.c "In public will be tough.  You'll find it easiest when you're one-on-one, and your subject isn't actively hostile towards you.  But yes, you have the idea.  Have fun!"
+                    sys "You've gained a limited hypnotic ability."
+                    $ player.money -= 500
+                    $ player.hypnosis_level += 4
+                    give 1 old_hypnotic_focus from dark_arts_store to player notify
+                    rem tags 'ohf_examined' from player
+                    rem action
+                "Not right now":
+                    pass
+    else:
+        "There's no one here to ask about it."
+        rem tags 'ohf_examined' from player
+    wt_image current_location.image
+    return
+
+# Love Potion
+label lp_examine:
+    if current_location == dark_arts_store and dark_arts_store.has_item(love_potion):
+        wt_image love_potion_store_1
+        "The little bottle of red fluid is mesmerizing. Smoke rises around it as tiny heart shape lights float upwards."
+        sys "Item is now available for purchase."
+        rem 1 love_potion from dark_arts_store no_message
+        $ dark_arts_store.add_store_item(love_potion, price = 500, send_to = player, with_examine = True, seen = True)
+    elif player.has_item(love_potion):
+        "Number of Love Potions: [player.love_potion]"
+    wt_image current_location.image
+    return
+
+label give_lp_fallback:
+    "Save this for someone else."
+    return
+
+label lp_das_examine:
+    wt_image love_potion_store_1
+    "The little bottle of red fluid is mesmerizing.  Smoke rises around it as tiny heart shape lights float upwards."
+    wt_image current_location.image
+    return
+
+# Suggestion Pills
+label icp_examine:
+    if current_location == dark_arts_store:
+        wt_image das_store_2
+        "This part of the store is devoted to a variety of inscrutable concoctions, including an assortment of pills."
+        add tags 'icp_examined' to player
+    elif player.has_item(suggestion_pills):
+        "These pills increase the likelihood a client will follow your instructions during training, but the effect is temporary and not reliable.{nw}"
+        if player.sup_use_count > 2:
+            extend " Taking a pill will cost you Energy, and the more pills you've taken in the past, the more Energy you lose."
+        elif player.sup_use_count > 1:
+            extend " Taking a pill will cost you Energy."
+        else:
+            extend " "
+        "Number of Suggestion Pills: [player.suggestion_pills]"
+    wt_image current_location.image
+    return
+
+label sup_examine:
+    if player.has_item(suggestion_pills):
+        "These pills increase the likelihood a client will follow your instructions during training, but the effect is temporary and not reliable.{nw}"
+        if player.sup_use_count > 2:
+            extend " Taking a pill will cost you Energy, and the more pills you've taken in the past, the more Energy you lose."
+        elif player.sup_use_count > 1:
+            extend " Taking a pill will cost you Energy."
+        else:
+            extend " "
+        "Number of Suggestion Pills: [player.suggestion_pills]"
+    elif current_location == dark_arts_store and dark_arts_store.has_item(suggestion_pills):
+        wt_image suggestion_pills_store_1
+        "This part of the store is devoted to a variety of inscrutable concoctions, including some unpalatable-looking so-called Suggestion Pills."
+    wt_image current_location.image
+    return
+
+label icp_ask_about:
+    if dark_arts_store.is_here and das_proprietor.is_here:
+        if not das_proprietor.has_tag('discussed_suggestion_pills'):
+            if not das_proprietor.has_tag('discussed_stamina_pills'):
+                wt_image das_store_2
+                "It's hard to make heads or tails of the items strewn about these musty shelves, but some of them are clearly intended for ingestion."
+                player.c "What are these?"
+                das_proprietor.c "Most are placebos or natural remedies for ailments that could as easily be cured by your local pharmacist. Some are more interesting. Take these nasty looking pills, for example."
+            else:
+                wt_image das_store_2
+                "You rummage around the shelves some more."
+                player.c "Do you have anything else of interest here?"
+                das_proprietor.c "These might be helpful to you."
+            wt_image suggestion_pills_store_1
+            "The store owner places a bowl of hard, unpalatable balls of - something - in front of you."
+            das_proprietor.c "They're more a parlor trick than anything truly useful. Take one, and the next time you ask someone to do something, they'll be slightly more inclined to agree. The effect doesn't last long, and it isn't completely reliable."
+            das_proprietor.c "The inventor had high hopes of using them to control the world, but they have a nasty side effect. The more you use them, the more draining they become. I sell them in packs of 4, and I really doubt you would want more than that."
+            das_proprietor.c "Only 100 for 4 of them."
+            add tags 'discussed_suggestion_pills' to das_proprietor
+            $ dark_arts_store.remove_item(unexamined_pills, with_message = False)
+            $ dark_arts_store.add_item(suggestion_pills, with_message = False)
+        else:
+            wt_image suggestion_pills_store_1
+            player.c "Are you sure these pills are safe?"
+            das_proprietor.c "Perfectly.  Once you've taken enough of them, they double as sleeping pills."
+        $ title = "Buy the Suggestion Pills?"
+        menu:
+            "Buy them (costs 100)" if player.money - player.min_money >= 100:
+                $ player.money -= 100
+                rem 1 suggestion_pills from dark_arts_store
+                add 4 suggestion_pills to player notify
+                rem action
+            "Not now":
+                pass
+    else:
+        "There's no one here to ask about them."
+    wt_image current_location.image
+    return
+
+
+label sup_ask_about:
+    if dark_arts_store.is_here and das_proprietor.is_here:
+        if not das_proprietor.has_tag('discussed_suggestion_pills'):
+            if not das_proprietor.has_tag('discussed_stamina_pills'):
+                wt_image das_store_2
+                "It's hard to make heads or tails of the items strewn about these musty shelves, but some of them are clearly intended for ingestion."
+                player.c "What are these?"
+                das_proprietor.c "Most are placebos or natural remedies for ailments that could as easily be cured by your local pharmacist. Some are more interesting."
+                das_proprietor.c "Take these nasty looking pills, for example."
+            else:
+                wt_image das_store_2
+                "You rummage around the shelves some more."
+                player.c "Do you have anything else of interest here?"
+                das_proprietor.c "These might be helpful to you."
+            wt_image suggestion_pills_store_1
+            "The store owner places a bowl of hard, unpalatable balls of - something - in front of you."
+            das_proprietor.c "They're more a parlor trick than anything truly useful. Take one, and the next time you ask someone to do something, they'll be slightly more inclined to agree. The effect doesn't last long, and it isn't completely reliable."
+            das_proprietor.c "The inventor had high hopes of using them to control the world, but they have a nasty side effect. The more you use them, the more draining they become. I sell them in packs of 4, and I really doubt you would want more than that."
+            das_proprietor.c "Only 100 for 4 of them."
+            add tags 'discussed_suggestion_pills' to das_proprietor
+        else:
+            wt_image suggestion_pills_store_1
+            player.c "Are you sure these pills are safe?"
+            das_proprietor.c "Perfectly.  Once you've taken enough of them, they double as sleeping pills."
+        $ title = "Buy the suggestion pills?"
+        menu:
+            "Buy them (costs 100)" if player.money - player.min_money >= 100:
+                $ player.money -= 100
+                rem 1 suggestion_pills from dark_arts_store
+                add 4 suggestion_pills to player notify
+                rem action
+            "Not now":
+                pass
+    else:
+        "There's no one here to ask about them."
+    wt_image current_location.image
+    return
+
+label sup_throw_away:
+  $ title = "Do you really want to rid of the Suggestion Pills?"
+  menu:
+    "Yes, get rid of them":
+      rem 4 suggestion_pills from player partial notify
+    "No":
+      pass
+  return
+
+label sup_take_pill:
+  "You take one of the suggestion pills.  It tastes fizzy in your mouth as if it's shooting off sparkles."
+  rem 1 suggestion_pills from player
+  if player.sup_use_count > 2:
+    "As the fizzy taste dissipates, you feel drained of energy."
+  elif player.sup_use_count > 0:
+    "As the fizzy taste dissipates, you feel a little tired."
+  # note that energy use is calculated based on the number of pills taken before, i.e. use count only increased after energy calc
+  $ temporary_count = player.sup_use_count * 10
+  if temporary_count > 0:
+    change player energy by -temporary_count
+  $ player.sup_use_count += 1
+  add tags 'sup_in_use' to player
+
+  python:
+    player.open_temp_group('Suggestion Pills', 1, 'check')
+    player.add_temp_mod('resistance_mod', -50)
+    player.add_temp_mod('desire_mod', 30)
+    player.add_temp_mod('submission_mod', 30)
+    player.add_temp_mod('sos_mod', 10, with_notify_add = True, with_notify_resolve = True)
+    player.close_temp_group('sup')
+  return
+
+label sup_removed:
+  "The suggestion pill's effect seems to have worn off."
+  rem tags 'sup_in_use' from player
+  return
+
+label sup_das_examine:
+    wt_image suggestion_pills.image
+    "These are nasty looking pills.  Are you sure you want more of them?"
+    wt_image current_location.image
+    return
+
+# Ring of Sexuality
+label shr_examine:
+    if current_location == dark_arts_store:
+        wt_image ring_sexuality_store_1
+        "A shiny ring catches your attention.  It seems to exude a slight warmth."
+        add tags 'shr_examined' to player
+    elif player.has_item(ring_sexuality):
+        "Number of Rings of Sexuality: [player.ring_sexuality]"
+    wt_image current_location.image
+    return
+
+label rs_examine:
+    if current_location == dark_arts_store:
+        wt_image ring_sexuality_store_1
+        "The Ring of Sexuality seems to exude a slight warmth.  The storekeep said the wearer would be attracted to both sexes."
+    elif player.has_item(ring_sexuality):
+        "Number of Rings of Sexuality: [player.ring_sexuality]"
+    wt_image current_location.image
+    return
+
+label shr_ask_about:
+    if dark_arts_store.is_here and das_proprietor.is_here:
+        if not player.has_tag('discussed_shr'):
+            wt_image ring_sexuality_store_1
+            das_proprietor.c "A funny little trinket, isn't it, the Ring of Sexuality?  I used to have more, but they proved quite popular."
+            player.c "What does it do?"
+            das_proprietor.c "Broadens the wearer's horizon.  Their sexual horizon, to be exact.  Say they're only interested in boys, for some narrow-minded reason.  This will cause them to view girls to be equally interesting."
+            player.c "So it'll make anyone bisexual?"
+            das_proprietor.c "Not quite anyone.  Some poor souls aren't attracted to either boys or girls.  The ring's not powerful enough to help them."
+            add tags 'discussed_shr' to player
+            $ dark_arts_store.remove_item(shiny_ring, with_message = False)
+            $ dark_arts_store.add_item(ring_sexuality, with_message = False)
+        if dark_arts_store.has_item(ring_sexuality):
+            das_proprietor.c "It costs [ring_sexuality.price].  Do you want to buy it?"
+            if player.money - player.min_money >= ring_sexuality.price:
+                $ title = "Buy the ring?"
+                menu:
+                    "Yes":
+                        change player money by -ring_sexuality.price
+                        give 1 ring_sexuality from dark_arts_store to player notify
+                    "No":
+                        pass
+            else:
+                "You can't afford it."
+    else:
+        "There's no one here to ask about it."
+    wt_image current_location.image
+    return
+
+
+label rs_ask_about:
+    if dark_arts_store.is_here and das_proprietor.is_here:
+        if dark_arts_store.has_item(ring_sexuality):
+            das_proprietor.c "It costs [ring_sexuality.price].  Do you want to buy it?"
+            if player.money - player.min_money >= ring_sexuality.price:
+                $ title = "Buy the ring?"
+                menu:
+                    "Yes":
+                        change player money by -ring_sexuality.price
+                        give 1 ring_sexuality from dark_arts_store to player notify
+                    "No":
+                        pass
+            else:
+                "You can't afford it."
+    else:
+        "There's no one here to ask about it."
+    wt_image current_location.image
+    return
+
+label give_rs_fallback:
+    if not selected_person.has_any_tag('girlfriend', 'hypno_girlfriend'):
+        "She's not ready to accept a ring from you."
+    elif selected_person.has_tag('likes_girls'):
+        "She already likes girls.  The ring's not going to help."
+    elif not selected_person.has_tag('likes_boys'):
+        "She's too asexual for the ring to help."
+    else:
+        "She's happy to receive a gift from you.  The ring's influence is so subtle, she's not even aware that her view of other women has changed."
+        give 1 ring_sexuality from player to selected_person notify
+        call convert(selected_person, 'lesbian') from _call_convert_189
+    return
+
+# Transformation Potion
+label tp_examine:
+    if current_location == dark_arts_store and dark_arts_store.has_item(transformation_potion):
+        wt_image transformation_potion_store_1
+        "A black potion sits in a locked case beside an ancient text illustrated with a woman looking into a mirror."
+        add tags 'tp_examined' to player
+    elif player.has_item(transformation_potion):
+        "Number of Transformation Potions: [player.transformation_potion]"
+    wt_image current_location.image
+    return
+
+label tp_ask_about:
+    if dark_arts_store.is_here and das_proprietor.is_here:
+        wt_image dap_store_2
+        "The store owner removes the potion from its case and places it - and it's instructions? - on a table in front of you."
+        wt_image transformation_potion_store_1
+        if player.has_tag('das_bonus_to_sos_results'):
+            das_proprietor.c "I thought you wanted to help your clients become what they want to be?"
+            player.c "Perhaps this could help?  At least for one of them?"
+            das_proprietor.c "Perhaps. Unlikely, but perhaps. The path of virtue is difficult. This potion could transform you as you're using it to transform another."
+        player.c "What does it do?"
+        das_proprietor.c "It changes a person.  Exactly the business you're in, I believe."
+        das_proprietor.c "I'm curious to see how you'll use it, so I'll let you have it for a fraction of its true value. Only 700."
+        $ title = "Buy the transformation potion? (costs 700)"
+        menu:
+            "Buy it" if player.money - player.min_money >= 700:
+                $ player.money -= 700
+                give 1 transformation_potion from dark_arts_store to player notify
+                rem action
+                rem tags 'tp_examined' from player
+            "Not right now":
+                pass
+    else:
+        "There's no one here to ask about it."
+        rem tags 'tp_examined' from player
+    wt_image current_location.image
+    return
+
+label give_tp_fallback:
+    "Save this for someone else."
+    return
+
+# Will-Tamer
+label wt_examine:
+    if current_location == dark_arts_store and dark_arts_store.has_item(will_tamer):
+        wt_image will_tamer_store_1
+        "It looks like a normal BDSM collar, but when you approach it, it feels like something that should be around your neck."
+        add tags 'wt_examined' to player
+    elif player.has_item(will_tamer):
+        "Number of Will-Tamer Collars: [player.will_tamer]"
+    wt_image current_location.image
+    return
+
+label wt_ask_about:
+    if dark_arts_store.is_here and das_proprietor.is_here:
+        if player.has_tag('tried_will_tamer_in_store'):
+            wt_image will_tamer_store_1
+            $ title = "Ask her to put it on you again?"
+            menu:
+                "Yes":
+                    player.c "Would you show me how the Will-Tamer works again?"
+                    wt_image das_proprietor.image
+                    "The store owner smiles, the sort of smile a cat smiles before it consumes a mouse."
+                    das_proprietor.c "Are you asking to become my slave?"
+                    player.c "I ..."
+                    if player.satisfied_client_count < 6:
+                        das_proprietor.c "I'll save you the embarrassment of answering. You're not nearly accomplished enough to serve at my feet yet. When you are, if I choose to take you, I won't need to use a Will-Tamer to do so."
+                    else:
+                        das_proprietor.c "I'll save you the embarrassment of answering. You haven't yet proven yourself interesting enough to serve at my feet. When you do, if I choose to take you, I won't need to use a Will-Tamer to do so."
+                "Not right now":
+                    pass
+        else:
+            wt_image dap_store_2
+            "The store owner takes the collar off the shelf and places it on a table in front of you."
+            wt_image will_tamer_store_1
+            "Being closer to it only makes it seem more like something that should be around your neck."
+            if player.has_tag('das_bonus_to_sos_results'):
+                das_proprietor.c "I thought you wanted to help your clients become what they want to be?"
+                player.c "Perhaps this could help? At least some of them?"
+                das_proprietor.c "Perhaps. Unlikely, but perhaps. If nothing else, it will surely cause you temptation. Shall I show you how it works?"
+                player.c "How much is it?"
+                das_proprietor.c "That depends on whether you let me show you how it works."
+            elif player.has_tag('das_decline'):
+                das_proprietor.c "You're still drawn to the collar, I see. Is it seeking you out, I wonder? If it is, you'd be silly to keep running from it.  Let me put it on you and show you how it works."
+                player.c "How much is it?"
+                das_proprietor.c "That depends on whether you let me show you how it works. Be brave now. What could a little collar do to you?"
+            else:
+                das_proprietor.c "Everyone is drawn to the collar eventually. Shall I show you how it works?"
+                player.c "How much is it?"
+                das_proprietor.c "That depends on whether you let me show you how it works."
+            $ title = "Let her put the collar on you?"
+            menu menu_das_wt:
+                "Let her collar you":
+                    wt_image you_collared_3
+                    "Silently, she slides up beside you and buckles the collar around your neck."
+                    wt_image you_collared_2
+                    "It feels good. Very good. Warm and snug and comforting around your neck."
+                    "It's just so ... right."
+                    "You don't know who this woman is, but she's powerful. So very powerful and important."
+                    "You're so lucky to have attracted her notice. Of all the men out there, she could have placed this collar on any of them.  She chose you."
+                    "You should show her how greatly you appreciate her trust. Anything she asks of you, you should do.  It's an honor to be allowed to obey her."
+                    wt_image dap_store_1
+                    if player.has_tag('das_decline'):
+                        "Her voice is in your head, through the pleasure, through the rightness of it all, you hear her words."
+                        das_proprietor.c "Was this what you were worried about when you ran away from the collar in the alley? Did you know it would feel this good? Could you sense you were weak and unable to resist its call?"
+                        das_proprietor.c "What should I do? What do you want? Shall I take your collar off, or shall I leave it on you?"
+                        $ title = "The collar wants to stay on"
+                        menu:
+                            "Ask her to take it off":
+                                player.c "Please. Take it off."
+                                das_proprietor.c "Is that what you want?"
+                                player.c "No. I want it to stay on, but please take it off me."
+                            "Tell her it belongs on you":
+                                player.c "It belongs on me."
+                                das_proprietor.c "I think you may be right. At the very least, the Will-Tamer has convinced you that this is where it belongs."
+                                das_proprietor.c "But if I leave it on you now, you will cease to exist. I won't even have an obedient little slave boy to play with. All I'll have is a mindless zombie with a mind turned to mush."
+                    wt_image das_proprietor.image
+                    "Suddenly, the warm, comfortable feeling is gone, but the woman you're so lucky to have met is still there."
+                    das_proprietor.c "Never leave it on too long at one time. You need to have patience if you want to get the most out of it. Also, it will only work on someone who willingly lets you put it on them."
+                    das_proprietor.c "After a few sessions in the collar, the wearer may be ready for - a change. To complete the process, the Will-Tamer forms a permanent bond with the wearer. Until then, you can use it on multiple people."
+                    $ will_tamer.price = 700
+                    "Wearing the collar has tired you out, but it was worth to learn how incredible this woman truly is."
+                    add tags 'tried_will_tamer_in_store' to player
+                    change player energy by -energy_long notify
+                "No, that's okay":
+                    player.c "That's okay.  I'm sure I can figure it out.  How much is it?"
+                    $ will_tamer.price = 900
+                    wt_image das_proprietor.image
+                "Look closer" if not player.has_tag('das_wt_look'):
+                    "On the inside of the collar, you think you see something."
+                    player.c "Is that writing?  Jenny, something?"
+                    das_proprietor.c "Jenny of the Guard. It was this collar's favorite wearer or owner; I'm not sure which. Either way, she's long gone. A galaxy far far away and all that. But the collar still remembers her fondly."
+                    player.c "The collar has a memory?"
+                    das_proprietor.c "More than its wearer, sometimes, but don't worry. I'm only going to put it on you for a moment."
+                    add tags 'das_wt_look' to player
+                    $ title = "Let her put the collar on you?"
+                    jump menu_das_wt
+            das_proprietor.c "It's priceless, really, but I'll let you have it for [will_tamer.price]."
+        $ title = "Buy the Will-Tamer? (costs [will_tamer.price])"
+        menu:
+            "Buy it" if player.money - player.min_money >= will_tamer.price:
+                $ player.money -= will_tamer.price
+                give 1 will_tamer from dark_arts_store to player notify
+                rem action
+                rem tags 'wt_examined' from player
+            "Not right now":
+                pass
+    else:
+        "There's no one here to ask about it."
+        rem tags 'wt_examined' from player
+    wt_image current_location.image
+    return
+
+label use_wt_fallback:
+    "Try this on someone else."
+    return
+
+########### TIMERS ###########
+## Common Timers
+# Start Day
+label das_proprietor_start_day:
+    if day == 4 and not player.has_tag('das_access'):
+        $ das_proprietor.temporary_count = player.satisfied_client_count
+        # NOTE: originally Ivy was excluded from this calculation, but reconsidering this and may have her count after all
+        # if ivy.has_tag('satisfied'):
+        #     $ das_proprietor.temporary_count -= 1 # backs out the effect of whether you did or didn't train the intro wife
+        if player.has_tag('das_gift'):
+            if das_proprietor.temporary_count >= 4 and not player.has_tag('das_open_message_received'):
+                add tags 'das_open_message_received' to player
+                notify "You received a new message today."
+                notify
+                $ das_message_action = living_room.add_action("New Message", label = "das_message", context = '_check_messages')
+        elif player.has_tag('das_decline'):
+            if das_proprietor.temporary_count >= 6 and not player.has_tag('das_open_message_received'):
+                add tags 'das_open_message_received' to player
+                notify "You received a new message today."
+                notify
+                $ das_message_action = living_room.add_action("New Message", label = "das_message", context = '_check_messages')
+        else:
+            if das_proprietor.temporary_count >= 2 and not player.has_tag('das_open_message_received'):
+                add tags 'das_open_message_received' to player
+                notify "You received a new message today."
+                notify
+                $ das_message_action = living_room.add_action("New Message", label = "das_message", context = '_check_messages')
+    return
+
+# End Day
+label das_proprietor_end_day:
+    pass
+    return
+
+# End Week
+label das_proprietor_end_week:
+    pass
+    return
+
+########### ROOMS ###########
+# Examine
+label das_examine:
+  "A dark room lit only by candles, which fill the air with a thick, pungent smoke. The smell is not unpleasant, but it is intense."
+  return
+
+# Break Access to DAS
+label das_no_access:
+  if not 'das_access' in player.tags:
+    wt_image das_store_outside
+    "There doesn't appear to be any door into the store. A sign on the window says 'Entrance by Invitation Only'."
+    if week > dark_arts_store.week and dark_arts_store.encounters < 4:
+      $ dark_arts_store.access_count += 1
+      $ dark_arts_store.week = week
+      if dark_arts_store.access_count >= 4:
+        wt_image das_alley_1
+        if dark_arts_store.encounters == 0:
+          "From an alley beside the store, you hear a woman's voice."
+          das_proprietor.c "You're back.  You keep coming back, even though you haven't been sent an invitation.  Why is that?"
+        else:
+          "The woman from the alley is here again."
+          das_proprietor.c "You still keep coming back.  Why is that?"
+        $ title = "Why do you keep coming back?"
+        menu:
+          "Stubbornness":
+            player.c "Just stubborn, I guess."
+            "She looks at you quietly."
+            das_proprietor.c "That's a very annoying quality.  I suppose that means you're going to keep coming back here.  And you're going to stick with that silly business of yours."
+            das_proprietor.c "Tell me, why do you do it, Wife Trainer?  I mean, besides the no strings attached sex.  A man with your qualities - stubbornness included - could find that elsewhere.  Why wife training?"
+            player.c "Would you believe I want to help people?"
+            "She stares at you for a moment."
+            das_proprietor.c "Really? You want to help them?  Don't you mean you want to control them?"
+            $ title = "What do you tell her?"
+            menu:
+              "I really do want to help them":
+                player.c "Sometimes, maybe, but like you said about the sex, there are simpler routes to that than my business.  I genuinely do want to help these women and their husbands."
+                das_proprietor.c "Help them become everything they could be?"
+                player.c "Yes, I suppose."
+                das_proprietor.c "Everything they want to be?  Or everything you want them to be?"
+                $ title = "What do you tell her?"
+                menu:
+                  "What they want to be":
+                    player.c "What they want to become. To be happy, with themselves and their marriage."
+                    "She watches you quietly for a long time.  Eventually, she puts out her cigarette."
+                    das_proprietor.c "How odd. A seemingly noble spirit on your path. Do you truly believe what you said, or are you trying to mislead me? I honestly can't tell."
+                    wt_image you_collared_2
+                    das_proprietor.c "Very well. You say you want to help people. Let's see what you can do. Impress us, and perhaps someday you'll receive an invitation to shop here. Until then, you will truly be wasting your time continuing to drop by here."
+                    wt_image downtown.image
+                    "As she disappears into the shadows, you think you feel different somehow. Or maybe that was just your imagination?"
+                    add tags 'das_bonus_to_sos_results' 'das_gift' to player
+                    $ player.sos_gain_mod += 3
+                  "What I want them to be":
+                    player.c "What I want them to be. If they didn't need my guidance, they wouldn't be coming to me in the first place."
+                    "She watches you quietly for a long time.  Eventually, she puts out her cigarette."
+                    das_proprietor.c "Take this. You want to change people; then this may help. Use it wisely, and perhaps someday you'll receive an invitation to shop here. Until then, you will truly be wasting your time continuing to drop by here."
+                    "She hands you a potion, then disappears into the shadows."
+                    add tags 'das_potion' 'das_gift' to player
+                    give 1 transformation_potion from dark_arts_store to player notify
+                    $ das_tp.available_quantity = 0
+                    $ das_proprietor.action_ask_transformation_potion = das_proprietor.add_action("Ask about another Transformation Potion", label = "_ask_transformation_potion")
+              "Yes, I want to control them":
+                player.c "A bit of both.  But yes, I get off on the control.  You seem to know a lot about me."
+                das_proprietor.c "Not really.  Perhaps someday you'll be interesting enough to learn more.  In the meantime, I have something that may be of use to you."
+                wt_image das_alley_2
+                "She approaches, with a collar in hand."
+                player.c "What is that?"
+                das_proprietor.c "Something you may find useful, but you need to let me show you how to use it first."
+                $ title = "What do you do?"
+                menu:
+                  "Let her collar you":
+                    "Some strange woman wants to put a collar on you in an alley beside a dark arts store with no door and seemingly no interest in getting new customers.  What could go wrong?"
+                    wt_image you_collared_3
+                    "Silently, she slides up beside you and buckles the collar around your neck."
+                    wt_image you_collared_2
+                    "It feels good.  Very good. Warm and snug and comforting around your neck.  It's just so ... right.  "
+                    "You don't know who this woman is, but she's powerful. So very powerful and important."
+                    "You're so lucky to have attracted her notice.  Of all the men out there, she could have placed this collar on any of them.  She chose you."
+                    "You should show her how greatly you appreciate her trust.  Anything she asks of you, you should do.  It's an honor to be allowed to obey her."
+                    wt_image das_alley_1
+                    "Suddenly, the warm, comfortable feeling is gone, but the woman you're so lucky to have met is still there."
+                    das_proprietor.c "Never leave it on too long at one time. You need to have patience, to go along with your stubbornness, if you want to get the most out of it. Also, it will only work on someone who willingly let's you put it on them."
+                    das_proprietor.c "After a few sessions in the collar, the wearer may be ready for - a change. To complete the process, the Will-Tamer forms a permanent bond with the wearer. Until then, you can use it on multiple people."
+                    das_proprietor.c "Use it wisely, and perhaps someday you'll receive an invitation to shop here. Until then, you will truly be wasting your time continuing to drop by here."
+                    wt_image das_alley_2
+                    "The amazing woman hands the collar to you, then disappears into the shadows. You're disappointed she didn't ask you to do more for her, but maybe she will the next time you see her."
+                    wt_image downtown.image
+                    "Wearing the collar has tired you out, but it was worth to learn how incredible this woman truly is."
+                    add tags 'das_collar' 'das_gift' to player
+                    give 1 will_tamer from dark_arts_store to player
+                    # $ das_wt.available_quantity = 0
+                    # $ das_proprietor.action_ask_will_tamer = das_proprietor.add_action("Ask about another Will-Tamer", label = "_ask_will_tamer")
+                    change player energy by -energy_long notify
+                  "Decline her offer":
+                    "She laughs as she sees you pull back."
+                    das_proprietor.c "Don't bother coming back here.  Without bravery, stubbornness amounts to nothing."
+                    add tags 'das_decline' to player
+            $ dark_arts_store.encounters = 3
+          "Curiosity":
+            player.c "Curiosity, I suppose.  What kind of store doesn't want new customers?"
+            das_proprietor.c "The kind that knows what customers it wants."
+            "She puts out her cigarette and disappears into the shadows."
+            player.c "Wait.  How do I get an invitation?"
+            das_proprietor.c "Be careful with curiosity.  You know what they say about it."
+          "I feel drawn here":
+            player.c "I can't explain it. I just feel drawn here somehow."
+            "She looks at you quietly.  After a moment, she puts out her cigarette and disappears into the shadows."
+            if player.has_tag('hypnotist'):
+              das_proprietor.c "You know a few parlor tricks.  I sense no greater awareness from you."
+            else:
+              das_proprietor.c "I don't sense any special awareness about you."
+        $ dark_arts_store.encounters += 1
+        $ dark_arts_store.access_count = 0
+        wt_image downtown.image
+      elif dark_arts_store.encounters > 0:
+        "There's no sign of the woman from the alley."
+    else:
+      if dark_arts_store.encounters > 0:
+        "There's no sign of the woman from the alley."
+    break_movement
+    wt_image current_location.image
+  else:
+    wt_image das_store_outside
+    "There's an unlocked door beside the 'Entrance by Invitation Only' sign - at least there is for you."
+  return
+
+label das_pay:
+  wt_image das_store
+  if not player.has_tag('das_already_visited'):
+    add tags 'das_already_visited' to player
+  return
+
+# this label kicks you out until you pay for any alley acquired item
+label das_dont_pay:
+  das_proprietor.c "Goodbye then. Feel free to return when you do."
+  wt_image downtown.image
+  "You suppose you must have walked out of the store on your own, but you don't really recall doing so."
+  call forced_movement(downtown) from _call_forced_movement_964
+  wt_image current_location.image
+  return
+
+# enter label
+label das_enter:
+  # first visit tests for entrance
+  if player.has_tag('das_message') and not player.has_tag('das_already_visited'):
+    wt_image das_store
+    "Inside is dark, the only light coming from a collection of candles that fill the air with a cloud of thick, pungent smoke. The smell is not unpleasant, but it is intense, and you cough as it enters your lungs."
+    das_proprietor.c "You'll get used to it if you shop here often enough that is."
+    # note: this chain could have used "elifs" but followed the Rags formatting instead; it works, but don't copy it :) ~WT
+    if not player.has_tag('das_gift'):
+      if dark_arts_store.encounters > 0:
+        "The woman speaking to you from behind the counter looks like she owns the place. She sounds like the woman from the alley, but you honestly can't say for certain whether it's the same woman or not."
+        das_proprietor.c "Feel free to look around. Let me know if you see anything that strikes your interest."
+      else:
+        "The woman speaking to you from behind the counter looks like she owns the place."
+        das_proprietor.c "Feel free to look around. Let me know if you see anything that strikes your interest."
+      call das_pay from _call_das_pay
+    else:
+      if player.has_tag('das_decline'):
+        das_proprietor.c "Unless, of course, you get scared and run away."
+        "The woman speaking to you from behind the counter looks like she owns the place. She sounds like the woman from the alley, but you honestly can't say for certain whether its the same woman or not."
+        das_proprietor.c "Feel free to look around. Let me know if you see anything that strikes your interest."
+        call das_pay from _call_das_pay_1
+      else:
+        if player.has_tag('das_collar'):
+          "The woman speaking to you from behind the counter looks like she owns the place. She sounds like the woman from the alley, but you honestly can't say for certain whether its the same woman or not."
+          das_proprietor.c "Have you brought 700 for the Will-Tamer?"
+          player.c "I thought that was a gift?"
+          das_proprietor.c "It was. And now that you've seen the benefits of it, I'm giving you the opportunity to shop for similar items. After you reimburse me for the cost of your gift."
+          if player.money - player.min_money >= 700:
+            $ title = "Do you want to pay her?"
+            menu:
+              "Here's your money":
+                das_proprietor.c "Thank you. Feel free to look around.  Let me know if you see anything that strikes your interest."
+                change player money by -700 notify
+                call das_pay from _call_das_pay_2
+              "I don't want to pay right now":
+                call das_dont_pay from _call_das_dont_pay
+          else:
+            player.c "I don't have that much."
+            call das_dont_pay from _call_das_dont_pay_1
+        else:
+          if player.has_tag('das_potion'):
+            "The woman speaking to you from behind the counter looks like she owns the place. She sounds like the woman from the alley, but you honestly can't say for certain whether its the same woman or not."
+            das_proprietor.c "Have you brought [das_tp.price] for the transformation potion?"
+            player.c "I thought that was a gift?"
+            das_proprietor.c "It was. And now that you've seen the benefits of it, I'm giving you the opportunity to shop for similar items. After you reimburse me for the cost of your gift."
+            if player.money - player.min_money >= das_tp.price:
+              $ title = "Do you want to pay her?"
+              menu:
+                "Here's your money":
+                  das_proprietor.c "Thank you. Feel free to look around. Let me know if you see anything that strikes your interest."
+                  change player money by -das_tp.price notify
+                  call das_pay from _call_das_pay_3
+                "I don't want to pay right now":
+                  call das_dont_pay from _call_das_dont_pay_2
+            else:
+              player.c "I don't have that much."
+              call das_dont_pay from _call_das_dont_pay_3
+          else:
+            "The woman speaking to you from behind the counter looks like she owns the place. She sounds like the woman from the alley, but you honestly can't say for certain whether its the same woman or not."
+            das_proprietor.c "Have you brought 500 for the benefits we bestowed on you?"
+            player.c "I thought that was a gift?"
+            das_proprietor.c "It was. And now that you've seen how useful it's been, I'm giving you the opportunity to shop for items that could also be of use to you. After you reimburse me for the cost of your gift."
+            if player.money - player.min_money >= 500:
+              $ title = "Do you want to pay her?"
+              menu:
+                "Here's your money":
+                  das_proprietor.c "Thank you."
+                  das_proprietor.c "Feel free to look around.  Let me know if you see anything that strikes your interest."
+                  change player money by -500 notify
+                  call das_pay from _call_das_pay_4
+                "I don't want to pay right now":
+                  call das_dont_pay from _call_das_dont_pay_4
+            else:
+              player.c "I don't have that much."
+              call das_dont_pay from _call_das_dont_pay_5
+    return
+
+# exit label, now blank after changes
+label das_exit:
+    return
+
+# Invitation Message
+label das_message:
+  if not player.has_tag('das_gift'):
+    das_proprietor.c "{i}You are invited to visit the Dark Arts Store. This is a personal invitation only. We look forward to seeing you soon.{/i}"
+  else:
+    if player.has_tag('das_decline'):
+      das_proprietor.c "{i}Perhaps you have grown braver since last we met? If so, you are invited to visit us again at the Dark Arts Store. This time we'll even let you in. This is a personal invitation only. We look forward to seeing you soon.{/i}"
+    else:
+      if player.has_tag('das_collar'):
+        das_proprietor.c "{i}We trust you have enjoyed making use of our Will-Tamer. You've earned an invitation to visit us again at the Dark Arts Store.{/i}"
+        das_proprietor.c "{i}Bring 700 as payment for the Will-Tamer, and we'll even let you in. This is a personal invitation only. We look forward to seeing you soon.{/i}"
+      else:
+        if player.has_tag('das_potion'):
+          das_proprietor.c "{i}We trust you made good use of our transformation potion. You've earned an invitation to visit us again at the Dark Arts Store.{/i}"
+          das_proprietor.c "{i}Bring 700 as payment for the potion, and we'll even let you in. This is a personal invitation only. We look forward to seeing you soon.{/i}"
+        else:
+          das_proprietor.c "{i}We trust you've made good use of the gift we bestowed upon you. You've earned an invitation to visit us again at the Dark Arts Store.{/i}"
+          das_proprietor.c "{i}Bring 500 as payment for your gift, and we'll even let you in. This is a personal invitation only. We look forward to seeing you soon.{/i}"
+  add tags 'das_access' 'das_message' to player
+  rem action
+  return
+
+################################### NOTES ###################################
+## Minor Character Status
+#0 = not yet prospect
+#1 = prospect, .status = "waiting_on_message"
+#2 = lost prospect, .status = "rejected"
+#3 = completed, .status = "post_training"
+#4 = continuing_actions, add tags 'continuing_actions' and .status = "post_training"
+#5 = dead, rem tags 'continuing_actions' and .status = "post_training"
